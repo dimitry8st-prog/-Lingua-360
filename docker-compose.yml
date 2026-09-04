@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    container_name: lingua360-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - lingua_data:/app/data
+      - ./obsidian-vault:/app/obsidian-vault
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  lingua_data:
+
