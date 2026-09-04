@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+data/*.db
+data/voices/*
+!data/voices/.gitkeep
+
