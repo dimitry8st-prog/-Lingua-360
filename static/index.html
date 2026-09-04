@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="ДИС Lingua 360 — персональный AI-репетитор английского и испанского языков">
+  <title>ДИС Lingua 360</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="orb orb-one"></div><div class="orb orb-two"></div>
+  <header class="topbar">
+    <a class="brand" href="#"><span>ДИС</span> Lingua 360</a>
+    <div id="statusPill" class="status-pill">● Локальный MVP</div>
+  </header>
+
+  <main>
+    <section id="loginView" class="login-layout">
+      <div class="hero-copy">
+        <p class="eyebrow">PERSONAL LANGUAGE OS</p>
+        <h1>Два языка.<br><em>Один ясный маршрут.</em></h1>
+        <p class="lead">Английский 70% и испанский 30%. Уроки, RAG-база Obsidian, фонетика и прогресс без смешивания языков.</p>
+        <div class="feature-row"><span>EN</span> American English <i></i><span>ES</span> Latin American Spanish</div>
+      </div>
+      <form id="loginForm" class="glass-card login-card">
+        <p class="eyebrow">ЛИЧНЫЙ КАБИНЕТ</p><h2>Продолжить обучение</h2>
+        <label>Email<input id="email" type="email" value="demo@lingua.local" required></label>
+        <label>Пароль<input id="password" type="password" value="demo123" required></label>
+        <button class="primary" type="submit">Войти в ДИС Lingua 360 <b>→</b></button>
+        <p id="loginError" class="error"></p>
+        <small>Демо-доступ указан для локальной проверки. На VPS пароль необходимо заменить.</small>
+      </form>
+    </section>
+
+    <section id="appView" class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="brand side-brand"><span>ДИС</span> Lingua 360</div>
+        <nav>
+          <button class="nav-item active" data-view="dashboard">⌂ <span>Сегодня</span></button>
+          <button class="nav-item" data-view="lesson">◇ <span>AI-урок</span></button>
+          <button class="nav-item" data-view="phonetics">◉ <span>Фонетика</span></button>
+          <button class="nav-item" data-view="progress">↗ <span>Прогресс</span></button>
+          <button class="nav-item" data-view="knowledge">▤ <span>Obsidian и RAG</span></button>
+        </nav>
+        <div class="telegram-stub"><span>Telegram</span><b>Заглушка</b><small>Подключение позже</small></div>
+        <button id="logout" class="link-button">Выйти</button>
+      </aside>
+
+      <div class="workspace">
+        <section id="dashboard" class="panel-view">
+          <div class="page-heading"><div><p class="eyebrow">ЧЕТВЕРГ • ПЛАН НА СЕГОДНЯ</p><h2>Добрый вечер, Дмитрий</h2><p>Небольшой шаг каждый день — и язык становится рабочим инструментом.</p></div><div class="streak">🔥 <b>1</b><small>день серии</small></div></div>
+          <div id="stats" class="stats-grid"></div>
+          <h3>Выберите маршрут</h3>
+          <div class="language-grid">
+            <button class="language-card english" data-language="English"><span class="flag">EN</span><div><small>70% времени</small><h3>English</h3><p>American pronunciation • A0 → B2</p><div class="progress-line"><i id="enBar"></i></div></div><b>→</b></button>
+            <button class="language-card spanish" data-language="Spanish"><span class="flag">ES</span><div><small>30% времени</small><h3>Español</h3><p>Latinoamericano • A0 → B2</p><div class="progress-line"><i id="esBar"></i></div></div><b>→</b></button>
+          </div>
+          <div class="today-grid"><div class="glass-card"><p class="eyebrow">СЕГОДНЯ</p><h3>15 минут достаточно</h3><p>5 минут повторения → 7 минут практики → 3 минуты рефлексии.</p></div><div class="glass-card orange"><p class="eyebrow">АНТИЗАЦИКЛИВАНИЕ</p><h3>Только две попытки</h3><p>Ошибка фиксируется и возвращается позже с новым объяснением.</p></div></div>
+        </section>
+
+        <section id="lesson" class="panel-view hidden">
+          <div class="page-heading"><div><p class="eyebrow">AI-РЕПЕТИТОР + RAG</p><h2>Персональный урок</h2><p>Ответ строится с учётом языка, уровня и материалов Obsidian.</p></div></div>
+          <div class="mode-switch"><button class="mode active" data-lang="English">English</button><button class="mode" data-lang="Spanish">Español</button><span>Языки не смешиваются</span></div>
+          <div class="lesson-layout">
+            <div class="chat glass-card"><div id="chatMessages" class="messages"><div class="message tutor"><b>ДИС Tutor</b><p>Выберите язык и задайте вопрос. Например: «Как произносить TH?»</p></div></div><form id="tutorForm" class="chat-form"><textarea id="tutorInput" placeholder="Напишите вопрос или попросите упражнение…" required></textarea><button class="primary">Отправить →</button></form></div>
+            <aside class="lesson-aside"><div class="glass-card"><p class="eyebrow">АКТИВНЫЙ РЕЖИМ</p><h3 id="activeLanguage">English • A0</h3><p id="activeAccent">American English</p></div><div class="glass-card"><p class="eyebrow">ИСТОЧНИКИ</p><div id="sourceList">Будут показаны после ответа RAG.</div></div></aside>
+          </div>
+        </section>
+
+        <section id="phonetics" class="panel-view hidden">
+          <div class="page-heading"><div><p class="eyebrow">ФОНЕТИКА И АРТИКУЛЯЦИЯ</p><h2>Смотрите. Слушайте. Записывайте.</h2><p>Ролики проходят ручное одобрение. В MVP голос оцениваете вы сами.</p></div></div>
+          <div class="phonetic-grid"><div class="glass-card"><div class="sound-badge">TH</div><h3>Кончик языка между зубами</h3><p>Выдыхайте мягко. Не заменяйте звук на «с» или «з».</p><a id="videoLink" class="primary anchor" target="_blank" rel="noopener">Найти одобренный ролик ↗</a></div><div class="glass-card recorder"><div id="micPulse" class="mic">●</div><h3>Ваша голосовая запись</h3><p id="recordStatus">Нажмите «Записать» и повторите фразу.</p><div class="record-actions"><button id="recordBtn" class="primary">Записать</button><button id="stopBtn" class="secondary" disabled>Стоп</button></div><audio id="playback" controls class="hidden"></audio><button id="saveVoice" class="secondary hidden">Сохранить запись</button></div></div>
+          <div class="glass-card phrase-card"><small>ФРАЗА ДЛЯ ПРАКТИКИ</small><strong id="practicePhrase">I think three times.</strong><button id="switchPhrase" class="link-button">Сменить язык</button></div>
+        </section>
+
+        <section id="progress" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ПРОГРЕСС</p><h2>Движение к B2</h2><p>Английский и испанский учитываются раздельно.</p></div></div><div id="progressCards" class="progress-cards"></div><div class="glass-card"><h3>Контрольные точки</h3><div class="timeline"><span class="done">A0</span><i></i><span>A1</span><i></i><span>A2</span><i></i><span>B1</span><i></i><span>B2</span></div></div></section>
+
+        <section id="knowledge" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">БАЗА ЗНАНИЙ</p><h2>Obsidian + RAG</h2><p>В уроки попадают только одобренные материалы нужного языка.</p></div></div><div class="integration-grid"><div class="glass-card integration"><span>◆</span><div><h3>Obsidian Vault</h3><p>Серверная база Markdown</p></div><b class="ok">Подключено</b></div><div class="glass-card integration"><span>◎</span><div><h3>OpenAI API</h3><p>Генерация учебного ответа</p></div><b id="openaiState">Проверка</b></div><div class="glass-card integration"><span>▶</span><div><h3>YouTube</h3><p>Фонетика и артикуляция</p></div><b id="youtubeState">Проверка</b></div><div class="glass-card integration muted"><span>✈</span><div><h3>Telegram</h3><p>Адаптер на будущее</p></div><b>Disabled</b></div></div><button id="reindex" class="primary">Обновить RAG-индекс</button><p id="reindexResult"></p></section>
+      </div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
