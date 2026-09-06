@@ -19,7 +19,7 @@
       <div class="hero-copy">
         <p class="eyebrow">PERSONAL LANGUAGE OS</p>
         <h1>Два языка.<br><em>Один ясный маршрут.</em></h1>
-        <p class="lead">Английский 70% и испанский 30%. Уроки, RAG-база Obsidian, фонетика и прогресс без смешивания языков.</p>
+        <p class="lead">Системный маршрут A0 → B2: короткая теория, живая практика, RAG-база Obsidian, фонетика, рефлексия и повторение ошибок.</p>
         <div class="feature-row"><span>EN</span> American English <i></i><span>ES</span> Latin American Spanish</div>
       </div>
       <form id="loginForm" class="glass-card login-card">
@@ -39,6 +39,7 @@
           <button class="nav-item active" data-view="dashboard">⌂ <span>Сегодня</span></button>
           <button class="nav-item" data-view="lesson">◇ <span>AI-урок</span></button>
           <button class="nav-item" data-view="phonetics">◉ <span>Фонетика</span></button>
+          <button class="nav-item" data-view="reviews">↻ <span>Повторение</span></button>
           <button class="nav-item" data-view="progress">↗ <span>Прогресс</span></button>
           <button class="nav-item" data-view="knowledge">▤ <span>Obsidian и RAG</span></button>
         </nav>
@@ -55,15 +56,22 @@
             <button class="language-card english" data-language="English"><span class="flag">EN</span><div><small>70% времени</small><h3>English</h3><p>American pronunciation • A0 → B2</p><div class="progress-line"><i id="enBar"></i></div></div><b>→</b></button>
             <button class="language-card spanish" data-language="Spanish"><span class="flag">ES</span><div><small>30% времени</small><h3>Español</h3><p>Latinoamericano • A0 → B2</p><div class="progress-line"><i id="esBar"></i></div></div><b>→</b></button>
           </div>
-          <div class="today-grid"><div class="glass-card"><p class="eyebrow">СЕГОДНЯ</p><h3>15 минут достаточно</h3><p>5 минут повторения → 7 минут практики → 3 минуты рефлексии.</p></div><div class="glass-card orange"><p class="eyebrow">АНТИЗАЦИКЛИВАНИЕ</p><h3>Только две попытки</h3><p>Ошибка фиксируется и возвращается позже с новым объяснением.</p></div></div>
+          <div class="today-grid"><div class="glass-card"><p class="eyebrow">СЛЕДУЮЩИЙ УРОК</p><h3 id="todayLessonTitle">Загрузка маршрута…</h3><p id="todayLessonObjective"></p><button id="startToday" class="link-button">Начать урок →</button></div><div class="glass-card orange"><p class="eyebrow">АНТИЗАЦИКЛИВАНИЕ</p><h3>Только две попытки</h3><p>Ошибка фиксируется, способ объяснения меняется, а тема возвращается через два дня.</p></div></div>
+          <div class="glass-card week-card"><div class="week-heading"><div><p class="eyebrow">НЕДЕЛЬНЫЙ РИТМ</p><h3>5 часов: English 70% • Spanish 30%</h3></div><span>Языки — в разные дни</span></div><div id="weekPlan" class="week-plan"></div></div>
         </section>
 
         <section id="lesson" class="panel-view hidden">
           <div class="page-heading"><div><p class="eyebrow">AI-РЕПЕТИТОР + RAG</p><h2>Персональный урок</h2><p>Ответ строится с учётом языка, уровня и материалов Obsidian.</p></div></div>
           <div class="mode-switch"><button class="mode active" data-lang="English">English</button><button class="mode" data-lang="Spanish">Español</button><span>Языки не смешиваются</span></div>
+          <div class="lesson-brief glass-card"><div><p class="eyebrow">ЦЕЛЬ УРОКА</p><h3 id="lessonTitle">Загрузка…</h3><p id="lessonObjective"></p></div><div id="lessonMinutes" class="time-chip">20 мин</div></div>
+          <div id="lessonSteps" class="lesson-steps"></div>
           <div class="lesson-layout">
             <div class="chat glass-card"><div id="chatMessages" class="messages"><div class="message tutor"><b>ДИС Tutor</b><p>Выберите язык и задайте вопрос. Например: «Как произносить TH?»</p></div></div><form id="tutorForm" class="chat-form"><textarea id="tutorInput" placeholder="Напишите вопрос или попросите упражнение…" required></textarea><button class="primary">Отправить →</button></form></div>
             <aside class="lesson-aside"><div class="glass-card"><p class="eyebrow">АКТИВНЫЙ РЕЖИМ</p><h3 id="activeLanguage">English • A0</h3><p id="activeAccent">American English</p></div><div class="glass-card"><p class="eyebrow">ИСТОЧНИКИ</p><div id="sourceList">Будут показаны после ответа RAG.</div></div></aside>
+          </div>
+          <div class="lesson-actions-grid">
+            <div class="glass-card"><p class="eyebrow">ПРИМЕНИТЕ</p><h3>Фраза урока</h3><p id="lessonPhrase" class="practice-line">—</p><p id="writingTask" class="muted-text"></p><button id="completeLesson" class="primary">Завершить урок +20 XP</button><p id="completeResult"></p></div>
+            <form id="reflectionForm" class="glass-card"><p class="eyebrow">РЕФЛЕКСИЯ</p><h3>Что изменилось после урока?</h3><label>Уверенность<select id="confidence"><option value="1">1 — пока сложно</option><option value="2">2</option><option value="3" selected>3 — понимаю</option><option value="4">4</option><option value="5">5 — могу применить</option></select></label><label>Что запомнилось?<textarea id="learned" required placeholder="Одно правило или новая фраза"></textarea></label><label>Что было трудно?<textarea id="difficult" placeholder="Можно оставить пустым"></textarea></label><button class="secondary">Сохранить рефлексию</button><p id="reflectionResult"></p></form>
           </div>
         </section>
 
@@ -73,7 +81,9 @@
           <div class="glass-card phrase-card"><small>ФРАЗА ДЛЯ ПРАКТИКИ</small><strong id="practicePhrase">I think three times.</strong><button id="switchPhrase" class="link-button">Сменить язык</button></div>
         </section>
 
-        <section id="progress" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ПРОГРЕСС</p><h2>Движение к B2</h2><p>Английский и испанский учитываются раздельно.</p></div></div><div id="progressCards" class="progress-cards"></div><div class="glass-card"><h3>Контрольные точки</h3><div class="timeline"><span class="done">A0</span><i></i><span>A1</span><i></i><span>A2</span><i></i><span>B1</span><i></i><span>B2</span></div></div></section>
+        <section id="reviews" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ИНТЕРВАЛЬНОЕ ПОВТОРЕНИЕ</p><h2>Возвращаем ошибки вовремя</h2><p>После второй попытки тема откладывается на два дня и появляется здесь.</p></div></div><div id="reviewList" class="review-list glass-card">Загрузка очереди…</div></section>
+
+        <section id="progress" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ПРОГРЕСС</p><h2>Движение к B2</h2><p>Два языка и шесть навыков учитываются раздельно.</p></div></div><div id="progressCards" class="progress-cards"></div><div id="skillProgress" class="skill-progress"></div><div class="glass-card"><h3>Контрольные точки</h3><div class="timeline"><span class="done">A0</span><i></i><span>A1</span><i></i><span>A2</span><i></i><span>B1</span><i></i><span>B2</span></div></div><div class="glass-card methodology"><p class="eyebrow">МЕТОДИКА</p><p><b>Структура:</b> CEFR и четыре навыка • <b>Практика:</b> Learn → Practice → Apply • <b>Контент:</b> понятные видео • <b>Контроль:</b> рефлексия и повторение.</p></div></section>
 
         <section id="knowledge" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">БАЗА ЗНАНИЙ</p><h2>Obsidian + RAG</h2><p>В уроки попадают только одобренные материалы нужного языка.</p></div></div><div class="integration-grid"><div class="glass-card integration"><span>◆</span><div><h3>Obsidian Vault</h3><p>Серверная база Markdown</p></div><b class="ok">Подключено</b></div><div class="glass-card integration"><span>◎</span><div><h3>OpenAI API</h3><p>Генерация учебного ответа</p></div><b id="openaiState">Проверка</b></div><div class="glass-card integration"><span>▶</span><div><h3>YouTube</h3><p>Фонетика и артикуляция</p></div><b id="youtubeState">Проверка</b></div><div class="glass-card integration muted"><span>✈</span><div><h3>Telegram</h3><p>Адаптер на будущее</p></div><b>Disabled</b></div></div><button id="reindex" class="primary">Обновить RAG-индекс</button><p id="reindexResult"></p></section>
       </div>
@@ -82,4 +92,3 @@
   <script src="/static/app.js"></script>
 </body>
 </html>
-
