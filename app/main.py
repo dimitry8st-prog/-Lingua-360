@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import secrets
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
@@ -10,7 +11,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .db import connection, init_db, utcnow, verify_password
-from .schemas import ExerciseRequest, LoginRequest, SessionRequest, TutorRequest, VideoStatusRequest
+from .schemas import (
+    ExerciseRequest,
+    LessonCompleteRequest,
+    LoginRequest,
+    ReflectionRequest,
+    SessionRequest,
+    TutorRequest,
+    VideoStatusRequest,
+)
+from .services.curriculum import LESSONS, SKILL_LABELS, WEEK_PLAN, lessons_for, next_lesson
 from .services.rag import load_sources, search
 from .services.tutor import answer
 from .settings import BASE_DIR, settings
@@ -73,8 +83,100 @@ def dashboard(user=Depends(current_user)):
         progress = [dict(r) for r in db.execute("SELECT language,level,lessons,minutes,xp FROM progress WHERE user_id=?", (user["id"],))]
         errors = db.execute("SELECT COUNT(*) count FROM errors WHERE user_id=?", (user["id"],)).fetchone()["count"]
         voices = db.execute("SELECT COUNT(*) count FROM voice_records WHERE user_id=?", (user["id"],)).fetchone()["count"]
+        completed = {r["lesson_id"] for r in db.execute("SELECT lesson_id FROM lesson_completions WHERE user_id=?", (user["id"],))}
+        skill_rows = [dict(r) for r in db.execute(
+            "SELECT language,skill,score,samples FROM skill_progress WHERE user_id=? ORDER BY language,skill", (user["id"],)
+        )]
     return {"user": user, "progress": progress, "errors": errors, "voices": voices,
-            "plan": {"English": "Американский TH: звук и короткие фразы", "Spanish": "Гласные и первое знакомство"}}
+            "plan": {language: next_lesson(language, completed) for language in ("English", "Spanish")},
+            "skills": [{**row, "label": SKILL_LABELS[row["skill"]]} for row in skill_rows],
+            "week": WEEK_PLAN}
+
+
+@app.get("/api/learning/plan")
+def learning_plan(user=Depends(current_user)):
+    with connection() as db:
+        completed = {r["lesson_id"] for r in db.execute("SELECT lesson_id FROM lesson_completions WHERE user_id=?", (user["id"],))}
+    return {
+        "allocation": {"English": 70, "Spanish": 30},
+        "week": WEEK_PLAN,
+        "routes": {
+            language: [{**item, "completed": item["id"] in completed} for item in lessons_for(language)]
+            for language in ("English", "Spanish")
+        },
+    }
+
+
+@app.get("/api/learning/today")
+def today_lesson(language: str, user=Depends(current_user)):
+    if language not in ("English", "Spanish"):
+        raise HTTPException(422, "Неизвестный язык")
+    with connection() as db:
+        completed = {r["lesson_id"] for r in db.execute("SELECT lesson_id FROM lesson_completions WHERE user_id=?", (user["id"],))}
+    return next_lesson(language, completed)
+
+
+@app.post("/api/learning/complete")
+def complete_lesson(payload: LessonCompleteRequest, user=Depends(current_user)):
+    lesson = next((item for item in LESSONS if item.id == payload.lesson_id), None)
+    if not lesson or lesson.language != payload.language:
+        raise HTTPException(422, "Урок не соответствует выбранному языку")
+    now = utcnow()
+    with connection() as db:
+        existing = db.execute(
+            "SELECT 1 FROM lesson_completions WHERE user_id=? AND lesson_id=?", (user["id"], payload.lesson_id)
+        ).fetchone()
+        if existing:
+            return {"completed": True, "already_completed": True, "lesson_id": payload.lesson_id}
+        db.execute(
+            "INSERT INTO lesson_completions(user_id,lesson_id,language,minutes,created_at) VALUES(?,?,?,?,?)",
+            (user["id"], payload.lesson_id, payload.language, payload.minutes, now),
+        )
+        for skill in set(payload.practiced_skills):
+            db.execute(
+                "UPDATE skill_progress SET score=MIN(100,score+8),samples=samples+1,updated_at=? "
+                "WHERE user_id=? AND language=? AND skill=?",
+                (now, user["id"], payload.language, skill),
+            )
+        db.execute(
+            "UPDATE progress SET lessons=lessons+1,minutes=minutes+?,xp=xp+20 WHERE user_id=? AND language=?",
+            (payload.minutes, user["id"], payload.language),
+        )
+        a0_ids = {item.id for item in LESSONS if item.language == payload.language and item.level == "A0"}
+        completed_a0 = {r["lesson_id"] for r in db.execute(
+            "SELECT lesson_id FROM lesson_completions WHERE user_id=? AND language=?", (user["id"], payload.language)
+        )}
+        if a0_ids.issubset(completed_a0):
+            db.execute("UPDATE progress SET level='A1' WHERE user_id=? AND language=?", (user["id"], payload.language))
+    return {"completed": True, "already_completed": False, "lesson_id": payload.lesson_id, "xp_added": 20}
+
+
+@app.post("/api/reflections")
+def save_reflection(payload: ReflectionRequest, user=Depends(current_user)):
+    with connection() as db:
+        cur = db.execute(
+            "INSERT INTO reflections(user_id,language,lesson_id,confidence,learned,difficult,created_at) VALUES(?,?,?,?,?,?,?)",
+            (user["id"], payload.language, payload.lesson_id, payload.confidence, payload.learned, payload.difficult, utcnow()),
+        )
+    return {"saved": True, "id": cur.lastrowid}
+
+
+@app.get("/api/reviews")
+def review_queue(language: str | None = None, user=Depends(current_user)):
+    params: list[object] = [user["id"]]
+    where = "user_id=?"
+    if language:
+        if language not in ("English", "Spanish"):
+            raise HTTPException(422, "Неизвестный язык")
+        where += " AND language=?"
+        params.append(language)
+    with connection() as db:
+        rows = [dict(r) for r in db.execute(
+            f"SELECT id,language,category,example,count,next_review_at,created_at FROM errors WHERE {where} ORDER BY COALESCE(next_review_at,created_at)",
+            params,
+        )]
+    now = utcnow()
+    return [{**row, "due": not row["next_review_at"] or row["next_review_at"] <= now} for row in rows]
 
 
 @app.post("/api/sessions")
@@ -88,7 +190,12 @@ def create_session(payload: SessionRequest, user=Depends(current_user)):
 @app.post("/api/tutor/respond")
 async def tutor(payload: TutorRequest, user=Depends(current_user)):
     sources = search(payload.message, payload.language, payload.level)
-    result = await answer(payload.language, payload.level, payload.message, sources)
+    with connection() as db:
+        mistakes = [r["example"] for r in db.execute(
+            "SELECT example FROM errors WHERE user_id=? AND language=? ORDER BY id DESC LIMIT 3",
+            (user["id"], payload.language),
+        )]
+    result = await answer(payload.language, payload.level, payload.message, sources, "; ".join(mistakes))
     logger.info("tutor user=%s language=%s mode=%s sources=%s", user["id"], payload.language, result["mode"], len(sources))
     return result
 
@@ -97,15 +204,17 @@ async def tutor(payload: TutorRequest, user=Depends(current_user)):
 def submit_exercise(payload: ExerciseRequest, user=Depends(current_user)):
     if payload.attempt >= 2:
         feedback = "Попытка сохранена. Возвращаемся к ошибке позже, без зацикливания."
+        review_at = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
         with connection() as db:
-            db.execute("INSERT INTO errors(user_id,language,category,example,created_at) VALUES(?,?,?,?,?)",
-                       (user["id"], payload.language, "practice", payload.answer[:200], utcnow()))
+            db.execute("INSERT INTO errors(user_id,language,category,example,next_review_at,created_at) VALUES(?,?,?,?,?,?)",
+                       (user["id"], payload.language, "practice", payload.answer[:200], review_at, utcnow()))
     else:
         feedback = "Хорошая первая попытка. Исправьте одну деталь и повторите ещё раз."
     with connection() as db:
         db.execute("UPDATE progress SET lessons=lessons+1,xp=xp+10,minutes=minutes+5 WHERE user_id=? AND language=?",
                    (user["id"], payload.language))
-    return {"feedback": feedback, "next_action": "finish" if payload.attempt >= 2 else "retry", "attempt": payload.attempt}
+    return {"feedback": feedback, "next_action": "finish" if payload.attempt >= 2 else "retry", "attempt": payload.attempt,
+            "review_in_days": 2 if payload.attempt >= 2 else None}
 
 
 @app.get("/api/videos")
