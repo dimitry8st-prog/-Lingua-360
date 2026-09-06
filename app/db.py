@@ -75,6 +75,22 @@ def init_db() -> None:
                 language TEXT NOT NULL, filename TEXT NOT NULL, content_type TEXT,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS skill_progress (
+                user_id INTEGER NOT NULL, language TEXT NOT NULL, skill TEXT NOT NULL,
+                score INTEGER NOT NULL DEFAULT 0, samples INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL, PRIMARY KEY (user_id, language, skill)
+            );
+            CREATE TABLE IF NOT EXISTS lesson_completions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+                lesson_id TEXT NOT NULL, language TEXT NOT NULL, minutes INTEGER NOT NULL,
+                created_at TEXT NOT NULL, UNIQUE(user_id, lesson_id)
+            );
+            CREATE TABLE IF NOT EXISTS reflections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+                language TEXT NOT NULL, lesson_id TEXT NOT NULL,
+                confidence INTEGER NOT NULL, learned TEXT NOT NULL,
+                difficult TEXT NOT NULL, created_at TEXT NOT NULL
+            );
             """
         )
         user = db.execute("SELECT id FROM users WHERE email=?", (settings.owner_email,)).fetchone()
@@ -91,6 +107,11 @@ def init_db() -> None:
                 "INSERT OR IGNORE INTO progress(user_id,language,level) VALUES(?,?,?)",
                 (user_id, language, "A0"),
             )
+            for skill in ("speaking", "listening", "reading", "writing", "vocabulary", "pronunciation"):
+                db.execute(
+                    "INSERT OR IGNORE INTO skill_progress(user_id,language,skill,updated_at) VALUES(?,?,?,?)",
+                    (user_id, language, skill, utcnow()),
+                )
         if not db.execute("SELECT 1 FROM videos LIMIT 1").fetchone():
             db.executemany(
                 "INSERT INTO videos(language,topic,title,url,accent,status,created_at) VALUES(?,?,?,?,?,?,?)",
@@ -99,4 +120,3 @@ def init_db() -> None:
                     ("Spanish", "vowels", "Испанские гласные", "https://www.youtube.com/results?search_query=latin+american+spanish+vowels+pronunciation", "Latin American", "approved", utcnow()),
                 ],
             )
-
