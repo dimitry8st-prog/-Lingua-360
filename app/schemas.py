@@ -31,3 +31,17 @@ class ExerciseRequest(BaseModel):
 class VideoStatusRequest(BaseModel):
     status: Literal["candidate", "approved", "archived"]
 
+
+class LessonCompleteRequest(BaseModel):
+    lesson_id: str = Field(pattern=r"^(en|es)-(a0|a1|a2|b1|b2)-\d{2}$")
+    language: Language
+    minutes: int = Field(ge=5, le=180)
+    practiced_skills: list[Literal["speaking", "listening", "reading", "writing", "vocabulary", "pronunciation"]]
+
+
+class ReflectionRequest(BaseModel):
+    language: Language
+    lesson_id: str = Field(min_length=5, max_length=30)
+    confidence: int = Field(ge=1, le=5)
+    learned: str = Field(min_length=2, max_length=500)
+    difficult: str = Field(default="", max_length=500)
