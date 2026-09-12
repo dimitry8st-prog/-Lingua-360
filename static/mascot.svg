@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none" role="img" aria-label="Линни, маскот Lingua 360">
+  <ellipse cx="100" cy="210" rx="50" ry="8" fill="#0b2d52" opacity=".16"/>
+  <ellipse cx="76" cy="198" rx="15" ry="8" fill="#e07a1f"/>
+  <ellipse cx="124" cy="198" rx="15" ry="8" fill="#e07a1f"/>
+  <ellipse cx="100" cy="134" rx="64" ry="72" fill="#0b2d52"/>
+  <path class="mascot-wing mascot-wing-l" d="M40 120c-20 14-26 40-14 58 2-18 16-38 32-50-6-4-12-6-18-8z" fill="#114c86"/>
+  <path class="mascot-wing mascot-wing-r" d="M160 120c20 14 26 40 14 58-2-18-16-38-32-50 6-4 12-6 18-8z" fill="#114c86"/>
+  <ellipse cx="100" cy="150" rx="40" ry="44" fill="#f4f8fc"/>
+  <circle cx="100" cy="76" r="56" fill="#114c86"/>
+  <path d="M68 28c8-20 22-26 26-8-10 2-20 8-26 8z" fill="#0b2d52"/>
+  <path d="M132 28c-8-20-22-26-26-8 10 2 20 8 26 8z" fill="#0b2d52"/>
+  <circle cx="78" cy="78" r="19" fill="#fff"/>
+  <circle cx="122" cy="78" r="19" fill="#fff"/>
+  <g class="mascot-pupils">
+    <circle cx="80" cy="81" r="8.5" fill="#0b2d52"/>
+    <circle cx="124" cy="81" r="8.5" fill="#0b2d52"/>
+    <circle cx="83" cy="78" r="2.6" fill="#fff"/>
+    <circle cx="127" cy="78" r="2.6" fill="#fff"/>
+  </g>
+  <g class="mascot-lids" fill="#114c86">
+    <rect class="mascot-lid" x="59" y="59" width="38" height="18" rx="9"/>
+    <rect class="mascot-lid" x="103" y="59" width="38" height="18" rx="9"/>
+  </g>
+  <circle cx="78" cy="78" r="22" stroke="#f38b2a" stroke-width="4.5"/>
+  <circle cx="122" cy="78" r="22" stroke="#f38b2a" stroke-width="4.5"/>
+  <path d="M100 70v2" stroke="#f38b2a" stroke-width="5" stroke-linecap="round"/>
+  <path class="mascot-beak" d="M91 94l9 16 9-16H91z" fill="#f38b2a"/>
+  <ellipse class="mascot-beak-open" cx="100" cy="106" rx="9" ry="7" fill="#b85a14"/>
+  <circle cx="100" cy="152" r="18" fill="#f38b2a"/>
+  <text x="100" y="158" text-anchor="middle" font-size="12" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#fff">360</text>
+</svg>

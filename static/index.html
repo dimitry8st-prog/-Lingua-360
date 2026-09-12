@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="ДИС Lingua 360 — персональный AI-репетитор английского и испанского языков">
   <title>ДИС Lingua 360</title>
+  <link rel="icon" href="/static/mascot.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -17,6 +18,10 @@
   <main>
     <section id="loginView" class="login-layout">
       <div class="hero-copy">
+        <div class="mascot-hero">
+          <span data-mascot="idle" data-mascot-size="xl" title="Линни"></span>
+          <p class="mascot-bubble"><b>Линни</b>Я маскот ДИС Lingua 360. Веду урок по маршруту — от цели до повторения.</p>
+        </div>
         <p class="eyebrow">PERSONAL LANGUAGE OS</p>
         <h1>Два языка.<br><em>Один ясный маршрут.</em></h1>
         <p class="lead">Системный маршрут A0 → B2: короткая теория, живая практика, RAG-база Obsidian, фонетика, рефлексия и повторение ошибок.</p>
@@ -35,6 +40,7 @@
     <section id="appView" class="app-shell hidden">
       <aside class="sidebar">
         <div class="brand side-brand"><span>ДИС</span> Lingua 360</div>
+        <div class="sidebar-mascot"><span data-mascot="idle" data-mascot-size="md"></span><small>Линни</small></div>
         <nav>
           <button class="nav-item active" data-view="dashboard">⌂ <span>Сегодня</span></button>
           <button class="nav-item" data-view="lesson">◇ <span>AI-урок</span></button>
@@ -49,7 +55,7 @@
 
       <div class="workspace">
         <section id="dashboard" class="panel-view">
-          <div class="page-heading"><div><p class="eyebrow">ЧЕТВЕРГ • ПЛАН НА СЕГОДНЯ</p><h2>Добрый вечер, Дмитрий</h2><p>Небольшой шаг каждый день — и язык становится рабочим инструментом.</p></div><div class="streak">🔥 <b>1</b><small>день серии</small></div></div>
+          <div class="page-heading"><div class="heading-with-mascot"><span data-mascot="idle" data-mascot-size="lg"></span><div><p class="eyebrow">ЧЕТВЕРГ • ПЛАН НА СЕГОДНЯ</p><h2>Добрый вечер, Дмитрий</h2><p>Линни ведёт маршрут: короткая теория, практика и повторение ошибок.</p></div></div><div class="streak">🔥 <b>1</b><small>день серии</small></div></div>
           <div id="stats" class="stats-grid"></div>
           <h3>Выберите маршрут</h3>
           <div class="language-grid">
@@ -66,8 +72,8 @@
           <div class="lesson-brief glass-card"><div><p class="eyebrow">ЦЕЛЬ УРОКА</p><h3 id="lessonTitle">Загрузка…</h3><p id="lessonObjective"></p></div><div id="lessonMinutes" class="time-chip">20 мин</div></div>
           <div id="lessonSteps" class="lesson-steps"></div>
           <div class="lesson-layout">
-            <div class="chat glass-card"><div id="chatMessages" class="messages"><div class="message tutor"><b>ДИС Tutor</b><p>Выберите язык и задайте вопрос. Например: «Как произносить TH?»</p></div></div><form id="tutorForm" class="chat-form"><textarea id="tutorInput" placeholder="Напишите вопрос или попросите упражнение…" required></textarea><button class="primary">Отправить →</button></form></div>
-            <aside class="lesson-aside"><div class="glass-card"><p class="eyebrow">АКТИВНЫЙ РЕЖИМ</p><h3 id="activeLanguage">English • A0</h3><p id="activeAccent">American English</p></div><div class="glass-card"><p class="eyebrow">ИСТОЧНИКИ</p><div id="sourceList">Будут показаны после ответа RAG.</div></div></aside>
+            <div class="chat glass-card"><div id="chatMessages" class="messages"></div><form id="tutorForm" class="chat-form"><textarea id="tutorInput" placeholder="Напишите вопрос или попросите упражнение…" required></textarea><button class="primary">Отправить →</button></form></div>
+            <aside class="lesson-aside"><div class="glass-card mascot-aside"><span data-mascot="idle" data-mascot-size="lg" id="lessonMascot"></span><p class="eyebrow">ЛИННИ</p><h3 id="activeLanguage">English • A0</h3><p id="activeAccent">American English</p><p id="mascotStatus">Готова вести урок по маршруту.</p></div><div class="glass-card"><p class="eyebrow">ИСТОЧНИКИ</p><div id="sourceList">Будут показаны после ответа RAG.</div></div></aside>
           </div>
           <div class="lesson-actions-grid">
             <div class="glass-card"><p class="eyebrow">ПРИМЕНИТЕ</p><h3>Фраза урока</h3><p id="lessonPhrase" class="practice-line">—</p><p id="writingTask" class="muted-text"></p><button id="completeLesson" class="primary">Завершить урок +20 XP</button><p id="completeResult"></p></div>
@@ -77,13 +83,13 @@
 
         <section id="phonetics" class="panel-view hidden">
           <div class="page-heading"><div><p class="eyebrow">ФОНЕТИКА И АРТИКУЛЯЦИЯ</p><h2>Смотрите. Слушайте. Записывайте.</h2><p>Ролики проходят ручное одобрение. В MVP голос оцениваете вы сами.</p></div></div>
-          <div class="phonetic-grid"><div class="glass-card"><div class="sound-badge">TH</div><h3>Кончик языка между зубами</h3><p>Выдыхайте мягко. Не заменяйте звук на «с» или «з».</p><a id="videoLink" class="primary anchor" target="_blank" rel="noopener">Найти одобренный ролик ↗</a></div><div class="glass-card recorder"><div id="micPulse" class="mic">●</div><h3>Ваша голосовая запись</h3><p id="recordStatus">Нажмите «Записать» и повторите фразу.</p><div class="record-actions"><button id="recordBtn" class="primary">Записать</button><button id="stopBtn" class="secondary" disabled>Стоп</button></div><audio id="playback" controls class="hidden"></audio><button id="saveVoice" class="secondary hidden">Сохранить запись</button></div></div>
+          <div class="phonetic-grid"><div class="glass-card"><div class="sound-badge">TH</div><h3>Кончик языка между зубами</h3><p>Выдыхайте мягко. Не заменяйте звук на «с» или «з».</p><a id="videoLink" class="primary anchor" target="_blank" rel="noopener">Найти одобренный ролик ↗</a></div><div class="glass-card recorder"><span data-mascot="idle" data-mascot-size="lg" id="phonoMascot"></span><div id="micPulse" class="mic">●</div><h3>Повторите за Линни</h3><p id="recordStatus">Нажмите «Записать» и повторите фразу.</p><div class="record-actions"><button id="recordBtn" class="primary">Записать</button><button id="stopBtn" class="secondary" disabled>Стоп</button></div><audio id="playback" controls class="hidden"></audio><button id="saveVoice" class="secondary hidden">Сохранить запись</button></div></div>
           <div class="glass-card phrase-card"><small>ФРАЗА ДЛЯ ПРАКТИКИ</small><strong id="practicePhrase">I think three times.</strong><button id="switchPhrase" class="link-button">Сменить язык</button></div>
         </section>
 
         <section id="reviews" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ИНТЕРВАЛЬНОЕ ПОВТОРЕНИЕ</p><h2>Возвращаем ошибки вовремя</h2><p>После второй попытки тема откладывается на два дня и появляется здесь.</p></div></div><div id="reviewList" class="review-list glass-card">Загрузка очереди…</div></section>
 
-        <section id="progress" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ПРОГРЕСС</p><h2>Движение к B2</h2><p>Два языка и шесть навыков учитываются раздельно.</p></div></div><div id="progressCards" class="progress-cards"></div><div id="skillProgress" class="skill-progress"></div><div class="glass-card"><h3>Контрольные точки</h3><div class="timeline"><span class="done">A0</span><i></i><span>A1</span><i></i><span>A2</span><i></i><span>B1</span><i></i><span>B2</span></div></div><div class="glass-card methodology"><p class="eyebrow">МЕТОДИКА</p><p><b>Структура:</b> CEFR и четыре навыка • <b>Практика:</b> Learn → Practice → Apply • <b>Контент:</b> понятные видео • <b>Контроль:</b> рефлексия и повторение.</p></div></section>
+        <section id="progress" class="panel-view hidden"><div class="page-heading"><div class="heading-with-mascot"><span data-mascot="idle" data-mascot-size="md"></span><div><p class="eyebrow">ПРОГРЕСС</p><h2>Движение к B2</h2><p>Два языка и шесть навыков учитываются раздельно.</p></div></div></div><div id="progressCards" class="progress-cards"></div><div id="skillProgress" class="skill-progress"></div><div class="glass-card"><h3>Контрольные точки</h3><div class="timeline"><span class="done">A0</span><i></i><span>A1</span><i></i><span>A2</span><i></i><span>B1</span><i></i><span>B2</span></div></div><div class="glass-card methodology"><p class="eyebrow">МЕТОДИКА</p><p><b>Структура:</b> CEFR и четыре навыка • <b>Практика:</b> Learn → Practice → Apply • <b>Контент:</b> понятные видео • <b>Контроль:</b> рефлексия и повторение.</p></div></section>
 
         <section id="knowledge" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">БАЗА ЗНАНИЙ</p><h2>Obsidian + RAG</h2><p>В уроки попадают только одобренные материалы нужного языка.</p></div></div><div class="integration-grid"><div class="glass-card integration"><span>◆</span><div><h3>Obsidian Vault</h3><p>Серверная база Markdown</p></div><b class="ok">Подключено</b></div><div class="glass-card integration"><span>◎</span><div><h3>OpenAI API</h3><p>Генерация учебного ответа</p></div><b id="openaiState">Проверка</b></div><div class="glass-card integration"><span>▶</span><div><h3>YouTube</h3><p>Фонетика и артикуляция</p></div><b id="youtubeState">Проверка</b></div><div class="glass-card integration muted"><span>✈</span><div><h3>Telegram</h3><p>Адаптер на будущее</p></div><b>Disabled</b></div></div><button id="reindex" class="primary">Обновить RAG-индекс</button><p id="reindexResult"></p></section>
       </div>

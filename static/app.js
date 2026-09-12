@@ -1,6 +1,41 @@
+const MASCOT=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none" role="img" aria-label="Линни, маскот Lingua 360">
+  <ellipse cx="100" cy="210" rx="50" ry="8" fill="#0b2d52" opacity=".16"/>
+  <ellipse cx="76" cy="198" rx="15" ry="8" fill="#e07a1f"/>
+  <ellipse cx="124" cy="198" rx="15" ry="8" fill="#e07a1f"/>
+  <ellipse cx="100" cy="134" rx="64" ry="72" fill="#0b2d52"/>
+  <path class="mascot-wing mascot-wing-l" d="M40 120c-20 14-26 40-14 58 2-18 16-38 32-50-6-4-12-6-18-8z" fill="#114c86"/>
+  <path class="mascot-wing mascot-wing-r" d="M160 120c20 14 26 40 14 58-2-18-16-38-32-50 6-4 12-6 18-8z" fill="#114c86"/>
+  <ellipse cx="100" cy="150" rx="40" ry="44" fill="#f4f8fc"/>
+  <circle cx="100" cy="76" r="56" fill="#114c86"/>
+  <path d="M68 28c8-20 22-26 26-8-10 2-20 8-26 8z" fill="#0b2d52"/>
+  <path d="M132 28c-8-20-22-26-26-8 10 2 20 8 26 8z" fill="#0b2d52"/>
+  <circle cx="78" cy="78" r="19" fill="#fff"/>
+  <circle cx="122" cy="78" r="19" fill="#fff"/>
+  <g class="mascot-pupils">
+    <circle cx="80" cy="81" r="8.5" fill="#0b2d52"/>
+    <circle cx="124" cy="81" r="8.5" fill="#0b2d52"/>
+    <circle cx="83" cy="78" r="2.6" fill="#fff"/>
+    <circle cx="127" cy="78" r="2.6" fill="#fff"/>
+  </g>
+  <g class="mascot-lids" fill="#114c86">
+    <rect class="mascot-lid" x="59" y="59" width="38" height="18" rx="9"/>
+    <rect class="mascot-lid" x="103" y="59" width="38" height="18" rx="9"/>
+  </g>
+  <circle cx="78" cy="78" r="22" stroke="#f38b2a" stroke-width="4.5"/>
+  <circle cx="122" cy="78" r="22" stroke="#f38b2a" stroke-width="4.5"/>
+  <path d="M100 70v2" stroke="#f38b2a" stroke-width="5" stroke-linecap="round"/>
+  <path class="mascot-beak" d="M91 94l9 16 9-16H91z" fill="#f38b2a"/>
+  <ellipse class="mascot-beak-open" cx="100" cy="106" rx="9" ry="7" fill="#b85a14"/>
+  <circle cx="100" cy="152" r="18" fill="#f38b2a"/>
+  <text x="100" y="158" text-anchor="middle" font-size="12" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#fff">360</text>
+</svg>`;
 const state={token:localStorage.getItem('lingua_token'),language:'English',dashboard:null,currentLesson:null,blob:null};
 const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);
 const escapeHtml=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+function mascotHTML(mood='idle', size='md'){return `<span class="mascot mascot-${size} mood-${mood}">${MASCOT}</span>`}
+function setMascotMood(el, mood){if(!el)return;el.classList.remove('mood-idle','mood-talk','mood-listen','mood-happy');el.classList.add('mascot','mood-'+mood)}
+function hydrateMascots(root=document){root.querySelectorAll('[data-mascot]').forEach(el=>{const size=el.dataset.mascotSize||'md';const mood=el.dataset.mascot||'idle';el.classList.add('mascot','mascot-'+size,'mood-'+mood);el.innerHTML=MASCOT})}
+function tutorRow(inner, mood='idle'){return `<div class="message-row">${mascotHTML(mood,'sm')}<div class="message tutor">${inner}</div></div>`}
 
 async function api(path,options={}){
   const headers={...(options.headers||{})};
@@ -13,6 +48,8 @@ async function api(path,options={}){
 
 function showApp(){
   $('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');
+  hydrateMascots($('#appView'));
+  if(!$('#chatMessages').children.length)$('#chatMessages').innerHTML=tutorRow('<b>Линни</b><p>Выберите язык и задайте вопрос. Например: «Как произносить TH?»</p>','idle');
   loadDashboard();loadIntegrations();loadVideos();loadReviews();
 }
 function showLogin(){$('#appView').classList.add('hidden');$('#loginView').classList.remove('hidden')}
@@ -66,6 +103,8 @@ async function openLesson(language){
     $('#lessonPhrase').textContent=lesson.phrase;$('#writingTask').textContent=lesson.writing_task;
     $('#lessonSteps').innerHTML=lesson.steps.map((step,index)=>`<div class="lesson-step ${index===0?'active':''}"><b>${index+1}</b><span>${escapeHtml(step)}</span></div>`).join('');
     $('#tutorInput').value=`Проведи урок «${lesson.title}». Цель: ${lesson.objective}.`;
+    setMascotMood($('#lessonMascot'),'idle');
+    const status=$('#mascotStatus');if(status)status.textContent=`Готова к уроку «${lesson.title}».`;
   }catch(error){$('#lessonTitle').textContent=error.message}
 }
 $$('.language-card').forEach(button=>button.onclick=()=>openLesson(button.dataset.language));
@@ -74,12 +113,19 @@ $$('.mode').forEach(button=>button.onclick=()=>openLesson(button.dataset.lang));
 $('#tutorForm').addEventListener('submit',async event=>{
   event.preventDefault();const input=$('#tutorInput'),text=input.value.trim();if(!text)return;
   $('#chatMessages').insertAdjacentHTML('beforeend',`<div class="message user"><p>${escapeHtml(text)}</p></div>`);input.value='';
-  const wait=document.createElement('div');wait.className='message tutor';wait.textContent='Сверяюсь с Obsidian и вашими ошибками…';$('#chatMessages').append(wait);
+  setMascotMood($('#lessonMascot'),'talk');
+  const status=$('#mascotStatus');if(status)status.textContent='Сверяюсь с Obsidian и вашими ошибками…';
+  const row=document.createElement('div');row.className='message-row';
+  row.innerHTML=`${mascotHTML('talk','sm')}<div class="message tutor">Линни сверяется с маршрутом…</div>`;
+  $('#chatMessages').append(row);
+  const wait=row.querySelector('.message');
   try{
     const data=await api('/api/tutor/respond',{method:'POST',json:{language:state.language,level:state.currentLesson?.level||'A0',message:text}});
-    wait.innerHTML=`<b>ДИС Tutor</b><p>${escapeHtml(data.answer)}</p><p><strong>Практика:</strong> ${escapeHtml(data.exercise)}</p><small>${data.mode==='demo'?'Демо-режим':'OpenAI + RAG'} • не более 2 замечаний</small>`;
+    wait.innerHTML=`<b>Линни</b><p>${escapeHtml(data.answer)}</p><p><strong>Практика:</strong> ${escapeHtml(data.exercise)}</p><small>${data.mode==='demo'?'Демо-режим':'OpenAI + RAG'} • не более 2 замечаний</small>`;
+    setMascotMood(row.querySelector('.mascot'),'happy');setMascotMood($('#lessonMascot'),'happy');
+    if(status)status.textContent='Урок готов. Повторите фразу вслух.';
     $('#sourceList').innerHTML=data.sources.length?data.sources.map(source=>`<p>▤ ${escapeHtml(source.title)}<br><small>${escapeHtml(source.path)}</small></p>`).join(''):'Материал не найден — ответ ограничен.';
-  }catch(error){wait.textContent=error.message}
+  }catch(error){wait.textContent=error.message;setMascotMood($('#lessonMascot'),'idle')}
   $('#chatMessages').scrollTop=$('#chatMessages').scrollHeight;
 });
 
@@ -114,8 +160,9 @@ async function loadVideos(){try{const list=await api('/api/videos?language=Engli
 $('#switchPhrase').onclick=async()=>{state.language=state.language==='English'?'Spanish':'English';$('#practicePhrase').textContent=state.language==='English'?'I think three times.':'Una casa bonita.';const list=await api('/api/videos?language='+state.language);if(list[0])$('#videoLink').href=list[0].url};
 
 let recorder,chunks=[];
-$('#recordBtn').onclick=async()=>{try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});recorder=new MediaRecorder(stream);chunks=[];recorder.ondataavailable=event=>chunks.push(event.data);recorder.onstop=()=>{state.blob=new Blob(chunks,{type:'audio/webm'});$('#playback').src=URL.createObjectURL(state.blob);$('#playback').classList.remove('hidden');$('#saveVoice').classList.remove('hidden');stream.getTracks().forEach(track=>track.stop())};recorder.start();$('#micPulse').classList.add('live');$('#recordStatus').textContent='Идёт запись…';$('#recordBtn').disabled=true;$('#stopBtn').disabled=false}catch{$('#recordStatus').textContent='Разрешите доступ к микрофону в браузере.'}};
-$('#stopBtn').onclick=()=>{if(recorder?.state==='recording')recorder.stop();$('#micPulse').classList.remove('live');$('#recordStatus').textContent='Запись готова. Прослушайте и сохраните.';$('#recordBtn').disabled=false;$('#stopBtn').disabled=true};
-$('#saveVoice').onclick=async()=>{if(!state.blob)return;const form=new FormData();form.append('audio',state.blob,'practice.webm');try{await api('/api/voice?language='+state.language,{method:'POST',body:form});$('#recordStatus').textContent='Запись сохранена в личном кабинете.';$('#saveVoice').classList.add('hidden');loadDashboard()}catch(error){$('#recordStatus').textContent=error.message}};
+$('#recordBtn').onclick=async()=>{try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});recorder=new MediaRecorder(stream);chunks=[];recorder.ondataavailable=event=>chunks.push(event.data);recorder.onstop=()=>{state.blob=new Blob(chunks,{type:'audio/webm'});$('#playback').src=URL.createObjectURL(state.blob);$('#playback').classList.remove('hidden');$('#saveVoice').classList.remove('hidden');stream.getTracks().forEach(track=>track.stop())};  recorder.start();setMascotMood($('#phonoMascot'),'listen');$('#micPulse').classList.add('live');$('#recordStatus').textContent='Линни слушает. Повторите фразу.';$('#recordBtn').disabled=true;$('#stopBtn').disabled=false}catch{$('#recordStatus').textContent='Разрешите доступ к микрофону в браузере.'}};
+$('#stopBtn').onclick=()=>{if(recorder?.state==='recording')recorder.stop();setMascotMood($('#phonoMascot'),'happy');$('#micPulse').classList.remove('live');$('#recordStatus').textContent='Запись готова. Прослушайте и сохраните.';$('#recordBtn').disabled=false;$('#stopBtn').disabled=true};
+$('#saveVoice').onclick=async()=>{if(!state.blob)return;const form=new FormData();form.append('audio',state.blob,'practice.webm');try{await api('/api/voice?language='+state.language,{method:'POST',body:form});$('#recordStatus').textContent='Линни сохранила запись в кабинете.';setMascotMood($('#phonoMascot'),'idle');$('#saveVoice').classList.add('hidden');loadDashboard()}catch(error){$('#recordStatus').textContent=error.message}};
 
+hydrateMascots();
 if(state.token)showApp();else showLogin();
