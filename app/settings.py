@@ -21,12 +21,15 @@ class Settings:
     owner_password: str = os.getenv("OWNER_PASSWORD", "demo123")
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    openai_transcription_model: str = os.getenv("OPENAI_TRANSCRIPTION_MODEL", "gpt-4o-mini-transcribe")
+    openai_tts_model: str = os.getenv("OPENAI_TTS_MODEL", "gpt-4o-mini-tts")
+    openai_tts_voice: str = os.getenv("OPENAI_TTS_VOICE", "cedar")
     youtube_api_key: str = os.getenv("YOUTUBE_API_KEY", "")
     obsidian_path: Path = _path("OBSIDIAN_VAULT_PATH", "obsidian-vault")
     database_path: Path = _path("DATABASE_PATH", "data/lingua360.db")
     voice_path: Path = _path("VOICE_STORAGE_PATH", "data/voices")
+    reference_audio_path: Path = _path("REFERENCE_AUDIO_PATH", "data/reference_audio")
     telegram_enabled: bool = os.getenv("TELEGRAM_ENABLED", "false").lower() == "true"
 
 
 settings = Settings()
-
