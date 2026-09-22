@@ -6,4 +6,4 @@ __pycache__/
 data/*.db
 data/voices/*
 !data/voices/.gitkeep
-
+data/reference_audio/*
