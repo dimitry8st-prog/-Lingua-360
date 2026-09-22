@@ -45,6 +45,7 @@
           <button class="nav-item active" data-view="dashboard">⌂ <span>Сегодня</span></button>
           <button class="nav-item" data-view="lesson">◇ <span>AI-урок</span></button>
           <button class="nav-item" data-view="phonetics">◉ <span>Фонетика</span></button>
+          <button class="nav-item" data-view="reading">▰ <span>Чтение</span></button>
           <button class="nav-item" data-view="reviews">↻ <span>Повторение</span></button>
           <button class="nav-item" data-view="progress">↗ <span>Прогресс</span></button>
           <button class="nav-item" data-view="knowledge">▤ <span>Obsidian и RAG</span></button>
@@ -85,6 +86,36 @@
           <div class="page-heading"><div><p class="eyebrow">ФОНЕТИКА И АРТИКУЛЯЦИЯ</p><h2>Смотрите. Слушайте. Записывайте.</h2><p>Ролики проходят ручное одобрение. В MVP голос оцениваете вы сами.</p></div></div>
           <div class="phonetic-grid"><div class="glass-card"><div class="sound-badge">TH</div><h3>Кончик языка между зубами</h3><p>Выдыхайте мягко. Не заменяйте звук на «с» или «з».</p><a id="videoLink" class="primary anchor" target="_blank" rel="noopener">Найти одобренный ролик ↗</a></div><div class="glass-card recorder"><span data-mascot="idle" data-mascot-size="lg" id="phonoMascot"></span><div id="micPulse" class="mic">●</div><h3>Повторите за Линни</h3><p id="recordStatus">Нажмите «Записать» и повторите фразу.</p><div class="record-actions"><button id="recordBtn" class="primary">Записать</button><button id="stopBtn" class="secondary" disabled>Стоп</button></div><audio id="playback" controls class="hidden"></audio><button id="saveVoice" class="secondary hidden">Сохранить запись</button></div></div>
           <div class="glass-card phrase-card"><small>ФРАЗА ДЛЯ ПРАКТИКИ</small><strong id="practicePhrase">I think three times.</strong><button id="switchPhrase" class="link-button">Сменить язык</button></div>
+        </section>
+
+        <section id="reading" class="panel-view hidden">
+          <div class="page-heading"><div><p class="eyebrow">ENGLISH FOUNDATION SPRINT</p><h2>Ускоренное чтение вслух</h2><p>Пять дней параллельно с обычными уроками: слушайте, читайте, исправляйте и повторяйте.</p></div><div class="time-chip">3 × 10 мин</div></div>
+          <div id="readingDays" class="reading-days"></div>
+          <div class="reading-layout">
+            <div class="glass-card reading-text-card">
+              <p class="eyebrow" id="readingDayLabel">ДЕНЬ 1</p>
+              <h3 id="readingTitle">Загрузка текста…</h3>
+              <p id="readingText" class="reading-text"></p>
+              <p id="readingTranslation" class="muted-text"></p>
+              <div id="readingFocus" class="focus-words"></div>
+              <div class="reading-audio-actions">
+                <button id="listenSlow" class="primary">▶ Медленно</button>
+                <button id="listenNormal" class="secondary">▶ Обычно</button>
+              </div>
+              <audio id="readingReference" controls class="hidden"></audio>
+              <small class="ai-disclosure">Эталонный голос создан ИИ. Используется American English.</small>
+            </div>
+            <div class="glass-card recorder reading-recorder">
+              <span data-mascot="idle" data-mascot-size="lg" id="readingMascot"></span>
+              <h3>Прочитайте текст вслух</h3>
+              <p id="readingRecordStatus">Сначала прослушайте эталон, затем запишите своё чтение.</p>
+              <div class="record-actions"><button id="readingRecordBtn" class="primary">Записать</button><button id="readingStopBtn" class="secondary" disabled>Стоп</button></div>
+              <audio id="readingPlayback" controls class="hidden"></audio>
+              <button id="analyzeReading" class="primary hidden">Проверить чтение</button>
+            </div>
+          </div>
+          <div id="readingResult" class="glass-card reading-result hidden"></div>
+          <div class="glass-card sprint-method"><p class="eyebrow">РЕЖИМ НА ДЕНЬ</p><p><b>Утро:</b> послушать и прочитать по фразам. <b>Днём:</b> прочитать целиком и получить разбор. <b>Вечером:</b> повторить только трудные слова и снова прочитать текст.</p></div>
         </section>
 
         <section id="reviews" class="panel-view hidden"><div class="page-heading"><div><p class="eyebrow">ИНТЕРВАЛЬНОЕ ПОВТОРЕНИЕ</p><h2>Возвращаем ошибки вовремя</h2><p>После второй попытки тема откладывается на два дня и появляется здесь.</p></div></div><div id="reviewList" class="review-list glass-card">Загрузка очереди…</div></section>
