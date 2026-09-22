@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .db import connection, init_db, utcnow, verify_password
@@ -22,6 +22,7 @@ from .schemas import (
 )
 from .services.curriculum import LESSONS, SKILL_LABELS, WEEK_PLAN, lessons_for, next_lesson
 from .services.rag import load_sources, search
+from .services.reading import compare_reading, passage_by_id, public_passages, reference_audio, transcribe
 from .services.tutor import answer
 from .settings import BASE_DIR, settings
 
@@ -38,7 +39,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="ДИС Lingua 360", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="ДИС Lingua 360", version="0.2.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
@@ -302,3 +303,68 @@ def integrations(user=Depends(current_user)):
         "obsidian": "connected",
         "telegram": "enabled" if settings.telegram_enabled else "disabled",
     }
+
+
+@app.get("/api/reading/passages")
+def reading_passages(user=Depends(current_user)):
+    return {"route": "English Foundation Sprint", "days": 5, "passages": public_passages()}
+
+
+@app.get("/api/reading/reference/{passage_id}")
+async def reading_reference(passage_id: str, speed: str = "slow", user=Depends(current_user)):
+    passage = passage_by_id(passage_id)
+    if not passage:
+        raise HTTPException(404, "Текст не найден")
+    if speed not in ("slow", "normal"):
+        raise HTTPException(422, "Допустимая скорость: slow или normal")
+    try:
+        audio = await reference_audio(passage, speed)
+    except httpx.HTTPError:
+        logger.exception("Reference audio request failed for passage=%s", passage_id)
+        raise HTTPException(502, "Не удалось получить эталонное аудио")
+    except RuntimeError as error:
+        raise HTTPException(503, str(error))
+    return Response(
+        content=audio,
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "private, max-age=86400", "X-AI-Voice": "true"},
+    )
+
+
+@app.post("/api/reading/analyze")
+async def analyze_reading(
+    passage_id: str = Form(...),
+    audio: UploadFile = File(...),
+    user=Depends(current_user),
+):
+    passage = passage_by_id(passage_id)
+    if not passage:
+        raise HTTPException(404, "Текст не найден")
+    content_type = (audio.content_type or "").lower()
+    allowed_types = {"audio/webm", "video/webm", "audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp4", "audio/ogg"}
+    if content_type not in allowed_types:
+        raise HTTPException(415, "Поддерживаются WebM, WAV, MP3, MP4 и OGG")
+    content = await audio.read()
+    if not content:
+        raise HTTPException(422, "Запись пустая")
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(413, "Файл больше 10 МБ")
+    try:
+        transcript = await transcribe(
+            content,
+            audio.filename or "reading.webm",
+            content_type,
+            passage.text,
+        )
+    except httpx.HTTPError:
+        logger.exception("Reading transcription failed for user=%s passage=%s", user["id"], passage_id)
+        raise HTTPException(502, "Не удалось распознать запись. Попробуйте ещё раз в тихом помещении")
+    except RuntimeError as error:
+        raise HTTPException(503, str(error))
+
+    result = compare_reading(passage.text, transcript)
+    logger.info(
+        "reading user=%s passage=%s accuracy=%s issues=%s",
+        user["id"], passage_id, result["accuracy"], len(result["issues"]),
+    )
+    return {"passage_id": passage_id, "transcript": transcript, **result}
