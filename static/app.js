@@ -29,7 +29,7 @@ const MASCOT=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill
   <circle cx="100" cy="152" r="18" fill="#f38b2a"/>
   <text x="100" y="158" text-anchor="middle" font-size="12" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#fff">360</text>
 </svg>`;
-const state={token:localStorage.getItem('lingua_token'),language:'English',dashboard:null,currentLesson:null,blob:null};
+const state={token:localStorage.getItem('lingua_token'),language:'English',dashboard:null,currentLesson:null,blob:null,readingPassages:[],readingPassage:null,readingBlob:null};
 const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);
 const escapeHtml=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 function mascotHTML(mood='idle', size='md'){return `<span class="mascot mascot-${size} mood-${mood}">${MASCOT}</span>`}
@@ -50,7 +50,7 @@ function showApp(){
   $('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');
   hydrateMascots($('#appView'));
   if(!$('#chatMessages').children.length)$('#chatMessages').innerHTML=tutorRow('<b>Линни</b><p>Выберите язык и задайте вопрос. Например: «Как произносить TH?»</p>','idle');
-  loadDashboard();loadIntegrations();loadVideos();loadReviews();
+  loadDashboard();loadIntegrations();loadVideos();loadReviews();loadReadingPassages();
 }
 function showLogin(){$('#appView').classList.add('hidden');$('#loginView').classList.remove('hidden')}
 
@@ -65,6 +65,7 @@ function showView(view){
   $$('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.view===view));
   $$('.panel-view').forEach(item=>item.classList.add('hidden'));$('#'+view).classList.remove('hidden');
   if(view==='reviews')loadReviews();
+  if(view==='reading'&&!state.readingPassages.length)loadReadingPassages();
 }
 $$('.nav-item').forEach(button=>button.onclick=()=>showView(button.dataset.view));
 
@@ -163,6 +164,56 @@ let recorder,chunks=[];
 $('#recordBtn').onclick=async()=>{try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});recorder=new MediaRecorder(stream);chunks=[];recorder.ondataavailable=event=>chunks.push(event.data);recorder.onstop=()=>{state.blob=new Blob(chunks,{type:'audio/webm'});$('#playback').src=URL.createObjectURL(state.blob);$('#playback').classList.remove('hidden');$('#saveVoice').classList.remove('hidden');stream.getTracks().forEach(track=>track.stop())};  recorder.start();setMascotMood($('#phonoMascot'),'listen');$('#micPulse').classList.add('live');$('#recordStatus').textContent='Линни слушает. Повторите фразу.';$('#recordBtn').disabled=true;$('#stopBtn').disabled=false}catch{$('#recordStatus').textContent='Разрешите доступ к микрофону в браузере.'}};
 $('#stopBtn').onclick=()=>{if(recorder?.state==='recording')recorder.stop();setMascotMood($('#phonoMascot'),'happy');$('#micPulse').classList.remove('live');$('#recordStatus').textContent='Запись готова. Прослушайте и сохраните.';$('#recordBtn').disabled=false;$('#stopBtn').disabled=true};
 $('#saveVoice').onclick=async()=>{if(!state.blob)return;const form=new FormData();form.append('audio',state.blob,'practice.webm');try{await api('/api/voice?language='+state.language,{method:'POST',body:form});$('#recordStatus').textContent='Линни сохранила запись в кабинете.';setMascotMood($('#phonoMascot'),'idle');$('#saveVoice').classList.add('hidden');loadDashboard()}catch(error){$('#recordStatus').textContent=error.message}};
+
+async function loadReadingPassages(){
+  try{
+    const data=await api('/api/reading/passages');state.readingPassages=data.passages;
+    $('#readingDays').innerHTML=data.passages.map((item,index)=>`<button class="reading-day ${index===0?'active':''}" data-passage="${escapeHtml(item.id)}"><small>День ${item.day}</small><b>${escapeHtml(item.title)}</b></button>`).join('');
+    $$('#readingDays .reading-day').forEach(button=>button.onclick=()=>selectReadingPassage(button.dataset.passage));
+    selectReadingPassage(data.passages[0]?.id);
+  }catch(error){$('#readingText').textContent=error.message}
+}
+
+function selectReadingPassage(id){
+  const passage=state.readingPassages.find(item=>item.id===id);if(!passage)return;
+  state.readingPassage=passage;state.readingBlob=null;
+  $$('#readingDays .reading-day').forEach(item=>item.classList.toggle('active',item.dataset.passage===id));
+  $('#readingDayLabel').textContent=`ДЕНЬ ${passage.day}`;$('#readingTitle').textContent=passage.title;
+  $('#readingText').textContent=passage.text;$('#readingTranslation').textContent=passage.translation;
+  $('#readingFocus').innerHTML=passage.focus.map(word=>`<span>${escapeHtml(word)}</span>`).join('');
+  $('#readingReference').classList.add('hidden');$('#readingPlayback').classList.add('hidden');$('#analyzeReading').classList.add('hidden');$('#readingResult').classList.add('hidden');
+  $('#readingRecordStatus').textContent='Сначала прослушайте эталон, затем запишите своё чтение.';
+}
+
+async function playReadingReference(speed){
+  if(!state.readingPassage)return;
+  const audio=$('#readingReference');
+  $('#readingRecordStatus').textContent='Готовлю эталонное произношение…';
+  try{
+    const response=await fetch(`/api/reading/reference/${state.readingPassage.id}?speed=${speed}`,{headers:{Authorization:`Bearer ${state.token}`}});
+    if(!response.ok){const error=await response.json().catch(()=>({detail:'Ошибка аудио'}));throw new Error(error.detail)}
+    audio.src=URL.createObjectURL(await response.blob());audio.classList.remove('hidden');await audio.play();
+    $('#readingRecordStatus').textContent='Прослушайте текст и запишите своё чтение.';
+  }catch(error){$('#readingRecordStatus').textContent=error.message}
+}
+$('#listenSlow').onclick=()=>playReadingReference('slow');$('#listenNormal').onclick=()=>playReadingReference('normal');
+
+let readingRecorder,readingChunks=[];
+$('#readingRecordBtn').onclick=async()=>{try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});readingRecorder=new MediaRecorder(stream);readingChunks=[];readingRecorder.ondataavailable=event=>readingChunks.push(event.data);readingRecorder.onstop=()=>{state.readingBlob=new Blob(readingChunks,{type:'audio/webm'});$('#readingPlayback').src=URL.createObjectURL(state.readingBlob);$('#readingPlayback').classList.remove('hidden');$('#analyzeReading').classList.remove('hidden');stream.getTracks().forEach(track=>track.stop())};readingRecorder.start();setMascotMood($('#readingMascot'),'listen');$('#readingRecordStatus').textContent='Линни слушает ваше чтение…';$('#readingRecordBtn').disabled=true;$('#readingStopBtn').disabled=false}catch{$('#readingRecordStatus').textContent='Разрешите доступ к микрофону в браузере.'}};
+$('#readingStopBtn').onclick=()=>{if(readingRecorder?.state==='recording')readingRecorder.stop();setMascotMood($('#readingMascot'),'happy');$('#readingRecordStatus').textContent='Запись готова. Прослушайте её или отправьте на проверку.';$('#readingRecordBtn').disabled=false;$('#readingStopBtn').disabled=true};
+
+$('#analyzeReading').onclick=async()=>{
+  if(!state.readingBlob||!state.readingPassage)return;
+  const button=$('#analyzeReading');button.disabled=true;button.textContent='ИИ проверяет…';
+  const form=new FormData();form.append('passage_id',state.readingPassage.id);form.append('audio',state.readingBlob,'reading.webm');
+  try{
+    const data=await api('/api/reading/analyze',{method:'POST',body:form});
+    const issues=data.issues.filter(item=>item.expected).map(item=>`<li><b>${escapeHtml(item.expected)}</b>${item.heard?` — ИИ услышал «${escapeHtml(item.heard)}»`:' — слово не распознано'}</li>`).join('');
+    $('#readingResult').innerHTML=`<div class="reading-score"><b>${data.accuracy}%</b><span>совпадение слов</span></div><div><p class="eyebrow">РАЗБОР</p><h3>${escapeHtml(data.summary)}</h3><p><b>ИИ услышал:</b> ${escapeHtml(data.transcript||'Речь не распознана')}</p>${issues?`<p><b>Повторите:</b></p><ul>${issues}</ul>`:'<p class="ok-text">Пропусков и замен слов не найдено.</p>'}<small>${escapeHtml(data.disclaimer)}</small></div>`;
+    $('#readingResult').classList.remove('hidden');setMascotMood($('#readingMascot'),data.accuracy>=80?'happy':'idle');
+  }catch(error){$('#readingRecordStatus').textContent=error.message}
+  finally{button.disabled=false;button.textContent='Проверить чтение'}
+};
 
 hydrateMascots();
 if(state.token)showApp();else showLogin();

@@ -8,6 +8,7 @@ os.environ["VOICE_STORAGE_PATH"] = str(Path(tmp.name) / "voices")
 
 from fastapi.testclient import TestClient
 from app.main import app
+from app.services.reading import compare_reading
 
 
 def test_health_login_dashboard_and_rag():
@@ -25,6 +26,11 @@ def test_health_login_dashboard_and_rag():
         assert len(dashboard.json()["progress"]) == 2
         assert len(dashboard.json()["skills"]) == 12
         assert dashboard.json()["plan"]["English"]["id"] == "en-a0-01"
+
+        reading = client.get("/api/reading/passages", headers=headers)
+        assert reading.status_code == 200
+        assert reading.json()["days"] == 5
+        assert len(reading.json()["passages"]) == 5
 
         answer = client.post("/api/tutor/respond", headers=headers, json={
             "language": "English", "level": "A0", "message": "Как произносить TH sound?"
@@ -78,3 +84,13 @@ def test_invalid_login_and_language_validation():
         headers = {"Authorization": f"Bearer {login.json()['token']}"}
         bad = client.post("/api/tutor/respond", headers=headers, json={"language": "French", "level": "A0", "message": "Bonjour"})
         assert bad.status_code == 422
+
+
+def test_reading_comparison_is_deterministic():
+    exact = compare_reading("I am Dmitry.", "I am Dmitry")
+    assert exact["accuracy"] == 100
+    assert exact["issues"] == []
+
+    changed = compare_reading("I am a doctor.", "I am doctor")
+    assert changed["accuracy"] == 75
+    assert changed["focus_words"] == ["a"]
